@@ -6,11 +6,8 @@ import cv2
 
 def dir():
     dirpath = "/home/taiyoh/workplace/test/result/"+str(datetime.date.today())
-    if os.path.exists(dirpath):
-        return()
-    else:
+    if not os.path.exists(dirpath):
         os.mkdir(dirpath)
-    return()
 
 def filename(img):
     cnt = 0
