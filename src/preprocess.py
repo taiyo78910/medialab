@@ -92,20 +92,20 @@ def gamma_correction(img):
 
 def restrict_color(img):
     hsv = cv2.cvtColor(img,cv2.COLOR_BGR2HSV)
-    brightness_thereshold_l = np.array([0, 0, 100])
+    brightness_thereshold_l = np.array([0, 0, 140])
     brightness_thereshold_h = np.array([179, 255, 255])
-    rl_therehold_l = np.array([0, 40 , 80])
-    rl_therehold_h = np.array([30, 80 , 110])
-    rh_therehold_l = np.array([150, 40 , 80])
-    rh_therehold_h = np.array([179, 80 , 110])
+    # rl_therehold_l = np.array([0, 40 , 80])
+    # rl_therehold_h = np.array([30, 80 , 110])
+    # rh_therehold_l = np.array([150, 40 , 80])
+    # rh_therehold_h = np.array([179, 80 , 110])
     # high_brightness_thereshold_l = np.array([0, 0, 250])
     # high_brightness_thereshold_h = np.array([179, 255, 255])
 
     brightness_mask = cv2.inRange(hsv,brightness_thereshold_l,brightness_thereshold_h)
-    rl_mask = cv2.inRange(hsv,rl_therehold_l,rl_therehold_h)
-    rh_mask = cv2.inRange(hsv,rh_therehold_l,rh_therehold_h)
+    # rl_mask = cv2.inRange(hsv,rl_therehold_l,rl_therehold_h)
+    # rh_mask = cv2.inRange(hsv,rh_therehold_l,rh_therehold_h)
     # high_brightness_mask = cv2.inRange(hsv,high_brightness_thereshold_l,high_brightness_thereshold_h)
-    red_mask = cv2.addWeighted(rl_mask, 1, rh_mask, 1, 0)
+    # red_mask = cv2.addWeighted(rl_mask, 1, rh_mask, 1, 0)
 
     # cv2.namedWindow("brightness_mask", cv2.WINDOW_NORMAL)
     # cv2.imshow("brightness_mask", brightness_mask)
@@ -113,14 +113,14 @@ def restrict_color(img):
     # cv2.imshow("high_brightness_mask", high_brightness_mask)
 
     brightness_mask = cv2.merge((brightness_mask, brightness_mask, brightness_mask))
-    red_mask = cv2.merge((red_mask, red_mask ,red_mask))
-    red_mask = cv2.bitwise_not(red_mask)
+    # red_mask = cv2.merge((red_mask, red_mask ,red_mask))
+    # red_mask = cv2.bitwise_not(red_mask)
 
     # cv2.namedWindow("red_mask", cv2.WINDOW_NORMAL)
     # cv2.imshow("red_mask", red_mask)
 
     masked_img = cv2.bitwise_and(img, brightness_mask)
-    masked_img = cv2.bitwise_and(masked_img, red_mask)
+    # masked_img = cv2.bitwise_and(masked_img, red_mask)
     # masked_img = cv2.addWeighted(img, 1, brightness_mask, 1, 0)
 
     return masked_img
@@ -134,7 +134,7 @@ def restrict_dark(img):
 
     pix_mean = np.mean(pix)
 
-    pix_mask = np.where((pix/pix_mean) > 1 ,0 ,0)
+    pix_mask = np.where((pix/pix_mean) > 0.7 ,255 ,0)
 
     mask = cv2.merge((pix_mask, pix_mask, pix_mask))
     mask = mask.astype(np.uint8)
@@ -149,8 +149,8 @@ def restrict_dark(img):
 def restrict_saturation(img):
     hsv = cv2.cvtColor(img,cv2.COLOR_BGR2HSV)
     
-    thereshold_l = np.array([0, 0 , 0])
-    thereshold_h = np.array([179, 255 , 110])
+    thereshold_l = np.array([0, 0 , 200])
+    thereshold_h = np.array([179, 255 , 255])
     mask = cv2.inRange(hsv,thereshold_l,thereshold_h)
     mask = cv2.merge((mask, mask, mask))
     mask = cv2.bitwise_not(mask)
@@ -217,24 +217,24 @@ def light_up(target, gamma=1.18):
     return cv2.LUT(target, look_up_table)
 
 def dilation(img):
-    kernel = np.ones((3,5),np.uint8)
+    kernel = np.ones((2,2),np.uint8)
     dilation = cv2.dilate(img,kernel,iterations = 1)
     return dilation
 
 def cvt_saturation(img):
     img_hsv = cv2.cvtColor(img,cv2.COLOR_BGR2HSV)
     roi = [int(img.shape[0]*0.1), int(img.shape[0]*0.9), int(img.shape[1]*0.1), int(img.shape[1]*0.9)]
-    s_roi = img_hsv[roi[1]: roi[3], roi[0]: roi[2]]
-    s_rate = 170 / np.mean(s_roi[:,:,(2)])
-    img_hsv[:,:,(2)] = img_hsv[:,:,(2)] * s_rate
+    s_roi = img_hsv[roi[0]: roi[1], roi[2]: roi[3]]
+    s_rate = 20 / np.mean(s_roi[:,:,1])
+    img_hsv[:,:,1] = img_hsv[:,:,1] * s_rate
     img = cv2.cvtColor(img_hsv,cv2.COLOR_HSV2BGR)
     return(img)
 
 def cvt_brightness(img):
     img_hsv = cv2.cvtColor(img,cv2.COLOR_BGR2HSV)
     roi = [int(img.shape[0]*0.1), int(img.shape[0]*0.9), int(img.shape[1]*0.1), int(img.shape[1]*0.9)]
-    s_roi = img_hsv[roi[1]: roi[3], roi[0]: roi[2]]
-    b_rate = 140 / np.mean(s_roi[:,:,(2)])
+    s_roi = img_hsv[roi[0]: roi[1], roi[2]: roi[3]]
+    b_rate = 220 / np.mean(s_roi[:,:,(2)])
     img_hsv[:,:,(2)] = img_hsv[:,:,(2)] * b_rate
     img = cv2.cvtColor(img_hsv,cv2.COLOR_HSV2BGR)
     return(img)
@@ -263,9 +263,9 @@ def ext_color(b_img, g_img, r_img):
 
     # bw_mask = np.where((b_mean > 0.3) & (g_mean > 0.3) & (r_mean > 0.3), False, True)
 
-    b_mean_mask = np.where(b_mean >0.35 ,255 ,0)
-    g_mean_mask = np.where(g_mean >0.35 ,255 ,0)
-    r_mean_mask = np.where(r_mean >0.37 ,255 ,0)
+    b_mean_mask = np.where((b_mean >0.35) & (pix > 300) ,255 ,0)
+    g_mean_mask = np.where((g_mean >0.35) & (b_mean < 0.35) & (pix > 300) ,255 ,0)
+    r_mean_mask = np.where((r_mean >0.37) & (pix > 300) ,255 ,0)
     # b_mean_mask = np.where((b_mean_mask == 255) & (bw_mask == True) ,255 ,0)
     # g_mean_mask = np.where((g_mean_mask == 255) & (bw_mask == True) ,255 ,0)
     # r_mean_mask = np.where((r_mean_mask == 255) & (bw_mask == True) ,255 ,0)
@@ -478,8 +478,8 @@ def get_mask_position(mask, tmp, cnt):
     contours,hierarchy = cv2.findContours(closing,cv2.RETR_EXTERNAL,cv2.CHAIN_APPROX_SIMPLE)
 
     color_list = ["r", "g", "b"]
-    cv2.namedWindow(color_list[cnt], cv2.WINDOW_NORMAL)
-    cv2.imshow(color_list[cnt], closing)
+    # cv2.namedWindow(color_list[cnt], cv2.WINDOW_NORMAL)
+    # cv2.imshow(color_list[cnt], closing)
 
 
     min_area = mask.shape[0] * mask.shape[1] * 1e-5
@@ -506,7 +506,6 @@ def get_mask_position(mask, tmp, cnt):
         cv2.rectangle(tmp, (int(rect[0]*magnification), int(rect[1] * magnification)), (int((rect[0]+rect[2])*magnification), int((rect[1]+rect[3])*magnification)), colors[cnt], int(2*magnification))
     return(tmp)
 
-
 if __name__ == '__main__':
     args = sys.argv
     if 2 > len(args):
@@ -517,43 +516,51 @@ if __name__ == '__main__':
         img = cv2.imread(args[1])
         # cv2.namedWindow("img", cv2.WINDOW_NORMAL)
         # cv2.imshow("img", img)
+        # cv2.imwrite("input.jpg",img)
 
         # トリミング
         img = adjust_edge(img)
         tmp = img.copy()
         cv2.namedWindow("adjust_edge", cv2.WINDOW_NORMAL)
         cv2.imshow("adjust_edge", img)
+        # cv2.imwrite("adjust_edge.jpg",img)
 
         # 画像サイズ調整
         img = resize(img)
 
         # 文字削除
-        img = dilation(img)
-        cv2.namedWindow("dilation", cv2.WINDOW_NORMAL)
-        cv2.imshow("dilation", img)
+        # img = dilation(img)
+        # # cv2.namedWindow("dilation", cv2.WINDOW_NORMAL)
+        # # cv2.imshow("dilation", img)
+        # # cv2.imwrite("dilation.jpg",img)
         
-        # 彩度調整
-        img = cvt_saturation(img)
-        # cv2.namedWindow("cvt_saturation", cv2.WINDOW_NORMAL)
-        # cv2.imshow("cvt_saturation", img)
+        # # 彩度調整
+        # img = cvt_saturation(img)
+        # # cv2.imwrite("cvt_saturation.jpg",img)
+        # # cv2.namedWindow("cvt_saturation", cv2.WINDOW_NORMAL)
+        # # cv2.imshow("cvt_saturation", img)
 
-        # 明度調整
-        img = cvt_brightness(img)
-        # cv2.namedWindow("cvt_brightness", cv2.WINDOW_NORMAL)
-        # cv2.imshow("cvt_brightness", img)
+        # # 明度調整
+        # img = cvt_brightness(img)
+        # # cv2.imwrite("cvt_brightness.jpg",img)
+        # # cv2.namedWindow("cvt_brightness", cv2.WINDOW_NORMAL)
+        # # cv2.imshow("cvt_brightness", img)
 
-        # ガンマ補正
-        gamma_img = gamma_correction(img)
-        cv2.namedWindow("gamma_correction", cv2.WINDOW_NORMAL)
-        cv2.imshow("gamma_correction", gamma_img)
+        # # ガンマ補正
+        # gamma_img = gamma_correction(img)
+        # cv2.namedWindow("gamma_correction", cv2.WINDOW_NORMAL)
+        # cv2.imshow("gamma_correction", gamma_img)
+        # cv2.imwrite("gamma_correction.jpg",gamma_img)
 
         # 影除去
         # img = deshade(img)
+        # cv2.imwrite("deshade.jpg",p_img)
         # cv2.namedWindow("deshade", cv2.WINDOW_NORMAL)
         # cv2.imshow("deshade", img)
         
         # ヒストグラム均一化
-        # img = clahe(img)
+        # p_img = clahe(img)
+        # cv2.imwrite("clahe.jpg",p_img)
         # cv2.namedWindow("clahe", cv2.WINDOW_NORMAL)
         # cv2.imshow("clahe", img)
 
@@ -564,30 +571,33 @@ if __name__ == '__main__':
 
         # 彩度の低い部分を除去
         # img = restrict_saturation(img)
+        # cv2.imwrite("restrict_saturation.jpg",p_img)
         # cv2.namedWindow("restrict_saturation", cv2.WINDOW_NORMAL)
         # cv2.imshow("restrict_saturation", img)
         
         # 黒い部分の除去
         # img = restrict_color(img)
+        # cv2.imwrite("restrict_color.jpg",p_img)
         # cv2.namedWindow("restrict_color", cv2.WINDOW_NORMAL)
         # cv2.imshow("restrict_color", img)
 
         # 色の濃い部分を除去
         # img = restrict_dark(img)
-        # cv2.namedWindow("restrict_dark", cv2.WINDOW_NORMAL)
-        # cv2.imshow("restrict_dark", img)
+        # # cv2.imwrite("restrict_dark.jpg",p_img)
+        # # cv2.namedWindow("restrict_dark", cv2.WINDOW_NORMAL)
+        # # cv2.imshow("restrict_dark", img)
 
-        # BGR画像に分離
-        b_img, g_img ,r_img = extract_bgr(img)
-        # cv2.namedWindow("b_img", cv2.WINDOW_NORMAL)
-        # cv2.namedWindow("g_img", cv2.WINDOW_NORMAL)
-        # cv2.namedWindow("r_img", cv2.WINDOW_NORMAL)
-        # cv2.imshow("b_img", b_img)
-        # cv2.imshow("g_img", g_img)
-        # cv2.imshow("r_img", r_img)
+        # # BGR画像に分離
+        # b_img, g_img ,r_img = extract_bgr(img)
+        # # cv2.namedWindow("b_img", cv2.WINDOW_NORMAL)
+        # # cv2.namedWindow("g_img", cv2.WINDOW_NORMAL)
+        # # cv2.namedWindow("r_img", cv2.WINDOW_NORMAL)
+        # # cv2.imshow("b_img", b_img)
+        # # cv2.imshow("g_img", g_img)
+        # # cv2.imshow("r_img", r_img)
 
-        # BGR画像に分離(ガンマ補正済)
-        gamma_b_img, gamma_g_img ,gamma_r_img = extract_bgr(gamma_img)
+        # # BGR画像に分離(ガンマ補正済)
+        # gamma_b_img, gamma_g_img ,gamma_r_img = extract_bgr(gamma_img)
         # cv2.namedWindow("gamma_b_img", cv2.WINDOW_NORMAL)
         # cv2.namedWindow("gamma_g_img", cv2.WINDOW_NORMAL)
         # cv2.namedWindow("gamma_r_img", cv2.WINDOW_NORMAL)
@@ -596,7 +606,7 @@ if __name__ == '__main__':
         # cv2.imshow("gamma_r_img", gamma_r_img)
 
         # ヒストグラムプロット
-        # plot_hist(img)
+        plot_hist(img)
         # ratio = plot_ratio(img)
         # cv2.namedWindow("b_ratio", cv2.WINDOW_NORMAL)
         # cv2.imshow("b_ratio", ratio[0])
@@ -605,47 +615,50 @@ if __name__ == '__main__':
         # cv2.namedWindow("r_ratio", cv2.WINDOW_NORMAL)
         # cv2.imshow("r_ratio", ratio[2])
 
-        # 色抽出
-        b_mask, g_mask, r_mask = ext_color(b_img, g_img, r_img)
-        # cv2.namedWindow("b_mask", cv2.WINDOW_NORMAL)
-        # cv2.imshow("b_mask", b_mask)
-        # cv2.namedWindow("g_mask", cv2.WINDOW_NORMAL)
-        # cv2.imshow("g_mask", g_mask)
-        # cv2.namedWindow("r_mask", cv2.WINDOW_NORMAL)
-        # cv2.imshow("r_mask", r_mask)
+        # # 色抽出
+        # b_mask, g_mask, r_mask = ext_color(b_img, g_img, r_img)
+        # # cv2.namedWindow("b_mask", cv2.WINDOW_NORMAL)
+        # # cv2.imshow("b_mask", b_mask)
+        # # cv2.namedWindow("g_mask", cv2.WINDOW_NORMAL)
+        # # cv2.imshow("g_mask", g_mask)
+        # # cv2.namedWindow("r_mask", cv2.WINDOW_NORMAL)
+        # # cv2.imshow("r_mask", r_mask)
 
-        # 色抽出(ガンマ補正済)
-        gamma_b_mask, gamma_g_mask, gamma_r_mask = ext_color(gamma_b_img, gamma_g_img, gamma_r_img)
-        # cv2.namedWindow("gamma_b_mask", cv2.WINDOW_NORMAL)
-        # cv2.imshow("gamma_b_mask", gamma_b_mask)
-        # cv2.namedWindow("gamma_g_mask", cv2.WINDOW_NORMAL)
-        # cv2.imshow("gamma_g_mask", gamma_g_mask)
-        # cv2.namedWindow("gamma_r_mask", cv2.WINDOW_NORMAL)
-        # cv2.imshow("gamma_r_mask", gamma_r_mask)
+        # # 色抽出(ガンマ補正済)
+        # gamma_b_mask, gamma_g_mask, gamma_r_mask = ext_color(gamma_b_img, gamma_g_img, gamma_r_img)
+        # # cv2.namedWindow("gamma_b_mask", cv2.WINDOW_NORMAL)
+        # # cv2.imshow("gamma_b_mask", gamma_b_mask)
+        # # cv2.namedWindow("gamma_g_mask", cv2.WINDOW_NORMAL)
+        # # cv2.imshow("gamma_g_mask", gamma_g_mask)
+        # # cv2.namedWindow("gamma_r_mask", cv2.WINDOW_NORMAL)
+        # # cv2.imshow("gamma_r_mask", gamma_r_mask)
 
-        # # マーカー抽出
-        # img = get_position(img)
-        # cv2.namedWindow("get_position", cv2.WINDOW_NORMAL)
-        # cv2.imshow("get_position", img)
+        # # # マーカー抽出
+        # # img = get_position(img)
+        # # cv2.namedWindow("get_position", cv2.WINDOW_NORMAL)
+        # # cv2.imshow("get_position", img)
 
-        # マスク合成
-        # img = merge_mask(b_mask, gamma_g_mask, r_mask)
+        # # マスク合成
+        # img = merge_mask(gamma_b_mask, g_mask, r_mask)
+        # cv2.imwrite("mask.jpg",img)
         # cv2.namedWindow("mask", cv2.WINDOW_NORMAL)
         # cv2.imshow("mask", img)
 
-        # マーカー抽出ver.2
-        # img = get_marker(img, tmp)
-        # cv2.namedWindow("get_marker", cv2.WINDOW_NORMAL)
-        # cv2.imshow("get_marker", img)
+        # # マーカー抽出ver.2
+        # # img = get_marker(img, tmp)
+        # # cv2.namedWindow("get_marker", cv2.WINDOW_NORMAL)
+        # # cv2.imshow("get_marker", img)
 
-        # マーカー抽出ver.3
-        tmp = get_mask_position(r_mask, tmp, cnt)
-        cnt += 1
-        tmp = get_mask_position(g_mask, tmp, cnt)
-        cnt += 1
-        tmp = get_mask_position(gamma_b_mask, tmp, cnt)
-        cv2.namedWindow("get_mask_position", cv2.WINDOW_NORMAL)
-        cv2.imshow("get_mask_position", tmp)
+        # # マーカー抽出ver.3
+        # tmp = get_mask_position(r_mask, tmp, cnt)
+        # cnt += 1
+        # tmp = get_mask_position(g_mask, tmp, cnt)
+        # cnt += 1
+        # tmp = get_mask_position(gamma_b_mask, tmp, cnt)
+        # cv2.imwrite("result.jpg",tmp)
+        # # cv2.namedWindow("get_mask_position", cv2.WINDOW_NORMAL)
+        # # cv2.imshow("get_mask_position", tmp)
 
-        cv2.waitKey(0)
-        cv2.destroyAllWindows()
+        # cv2.waitKey(0)
+
+        # cv2.destroyAllWindows()
